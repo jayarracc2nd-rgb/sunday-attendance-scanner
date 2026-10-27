@@ -15,7 +15,12 @@
 <body>
   <h2>Sunday Service Attendance</h2>
   <label for="service">Service schedule</label>
-  <select id="service">
+<label for="scannerPin">Scanner PIN</label>
+<input id="scannerPin" type="password"
+       placeholder="Enter scanner PIN"
+       autocomplete="off"
+       style="width:100%;padding:12px;box-sizing:border-box;">
+ <select id="service">
     <option>1st Service</option>
     <option>2nd Service</option>
     <option>3rd Service</option>
@@ -27,6 +32,7 @@
   <div id="status">Ready. Select a service and start the camera.</div>
   <script>
     let scanner = null;
+    const APPS_SCRIPT_URL = https://script.google.com/macros/s/AKfycbwGg0uXgnN0WX4nU2vSONBrz57taifQVRgecyfBBFC1EfxHHRiu7F2mQ6Szjz8UiI7m/exec;
     const status = document.getElementById('status');
 
     document.getElementById('start').onclick = async () => {
@@ -36,15 +42,39 @@
         await scanner.start(
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 240, height: 240 } },
-          text => {
-            status.textContent = 'Connecting to attendance system...';
+          
+          async text => {
+            if (window.scanBusy) return;
+            window.scanBusy = true;
+
+            status.textContent = 'Sending attendance...';
+
+            try {
+              const response = await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'text/plain;charset=utf-8'
+                },
+                body: JSON.stringify({
+                  action: 'attendance',
+                  pin: document.getElementById('scannerPin').value,
+                  qrId: text.trim(),
+                  service: document.getElementById('service').value,
+                  scannedBy: 'Sunday Service Scanner'
+                })
+              });
+
+              const result = await response.json();
+              status.textContent = result.message ||
+                (result.ok ? 'Attendance recorded!' : 'Attendance failed.');
+            } catch (err) {
+              status.textContent = 'Connection error: ' + err.message;
+            } finally {
+              setTimeout(() => {
+                window.scanBusy = false;
+              }, 2500);
+            }
           }
-        );
-        status.textContent = 'Camera is on. Scan a member QR code.';
-      } catch (err) {
-        scanner = null;
-        status.textContent = 'Camera error: ' + err;
-      }
     };
 
     document.getElementById('stop').onclick = async () => {
