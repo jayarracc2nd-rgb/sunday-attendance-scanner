@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sunday Service QR Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 520px; margin: 24px auto; padding: 16px; }
+    select, button { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; }
+    #reader { width: 100%; }
+    #status { padding: 12px; background: #f1f1f1; margin-top: 12px; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <h2>Sunday Service Attendance</h2>
+  <label for="service">Service schedule</label>
+  <select id="service">
+    <option>1st Service</option>
+    <option>2nd Service</option>
+    <option>3rd Service</option>
+    <option>4th Service</option>
+  </select>
+  <div id="reader"></div>
+  <button id="start">Start camera</button>
+  <button id="stop">Stop camera</button>
+  <div id="status">Ready. Select a service and start the camera.</div>
+  <script>
+    let scanner = null;
+    const status = document.getElementById('status');
+
+    document.getElementById('start').onclick = async () => {
+      try {
+        if (scanner) return;
+        scanner = new Html5Qrcode('reader');
+        await scanner.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 240, height: 240 } },
+          text => {
+            status.textContent = 'QR detected: ' + text +
+              '. Attendance connection is not configured yet.';
+          }
+        );
+        status.textContent = 'Camera is on. Scan a member QR code.';
+      } catch (err) {
+        scanner = null;
+        status.textContent = 'Camera error: ' + err;
+      }
+    };
+
+    document.getElementById('stop').onclick = async () => {
+      if (!scanner) return;
+      try { await scanner.stop(); await scanner.clear(); }
+      catch (err) { console.error(err); }
+      scanner = null;
+      status.textContent = 'Camera stopped.';
+    };
+  </script>
+</body>
+</html>
