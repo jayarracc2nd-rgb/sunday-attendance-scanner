@@ -15,11 +15,6 @@
 <body>
   <h2>Sunday Service Attendance</h2>
   <label for="service">Service schedule</label>
-<label for="scannerPin">Scanner PIN</label>
-<input id="scannerPin" type="password"
-       placeholder="Enter scanner PIN"
-       autocomplete="off"
-       style="width:100%;padding:12px;box-sizing:border-box;">
  <select id="service">
     <option>1st Service</option>
     <option>2nd Service</option>
@@ -57,7 +52,6 @@
                 },
                 body: JSON.stringify({
                   action: 'attendance',
-                  pin: document.getElementById('scannerPin').value,
                   qrId: text.trim(),
                   service: document.getElementById('service').value,
                   scannedBy: 'Sunday Service Scanner'
