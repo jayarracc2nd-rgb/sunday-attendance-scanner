@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,8 +37,7 @@
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 240, height: 240 } },
           text => {
-            status.textContent = 'QR detected: ' + text +
-              '. Attendance connection is not configured yet.';
+            status.textContent = 'Connecting to attendance system...';
           }
         );
         status.textContent = 'Camera is on. Scan a member QR code.';
