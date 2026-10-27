@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,41 +7,63 @@
   <title>Sunday Service QR Scanner</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 520px; margin: 24px auto; padding: 16px; }
-    select, button { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 520px;
+      margin: 24px auto;
+      padding: 16px;
+    }
+    select, button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      font-size: 16px;
+    }
     #reader { width: 100%; }
-    #status { padding: 12px; background: #f1f1f1; margin-top: 12px; overflow-wrap: anywhere; }
+    #status {
+      padding: 12px;
+      background: #f1f1f1;
+      margin-top: 12px;
+      overflow-wrap: anywhere;
+    }
   </style>
 </head>
 <body>
   <h2>Sunday Service Attendance</h2>
+
   <label for="service">Service schedule</label>
- <select id="service">
+  <select id="service">
     <option>1st Service</option>
     <option>2nd Service</option>
     <option>3rd Service</option>
     <option>4th Service</option>
   </select>
+
   <div id="reader"></div>
   <button id="start">Start camera</button>
   <button id="stop">Stop camera</button>
   <div id="status">Ready. Select a service and start the camera.</div>
+
   <script>
     let scanner = null;
-    const APPS_SCRIPT_URL = https://script.google.com/macros/s/AKfycbwGg0uXgnN0WX4nU2vSONBrz57taifQVRgecyfBBFC1EfxHHRiu7F2mQ6Szjz8UiI7m/exec
+    let scanBusy = false;
+
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwGg0uXgnN0WX4nU2vSONBrz57taifQVRgecyfBBFC1EfxHHRiu7F2mQ6Szjz8UiI7m/exec';
     const status = document.getElementById('status');
 
     document.getElementById('start').onclick = async () => {
       try {
         if (scanner) return;
+
         scanner = new Html5Qrcode('reader');
+
         await scanner.start(
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 240, height: 240 } },
-          
-          async text => {
-            if (window.scanBusy) return;
-            window.scanBusy = true;
+
+          async (text) => {
+            if (scanBusy) return;
+            scanBusy = true;
 
             status.textContent = 'Sending attendance...';
 
@@ -59,22 +82,46 @@
               });
 
               const result = await response.json();
+
               status.textContent = result.message ||
-                (result.ok ? 'Attendance recorded!' : 'Attendance failed.');
+                (result.ok
+                  ? 'Attendance recorded!'
+                  : 'Attendance failed.');
             } catch (err) {
-              status.textContent = 'Connection error: ' + err.message;
+              status.textContent =
+                'Connection error: ' + err.message;
             } finally {
               setTimeout(() => {
-                window.scanBusy = false;
+                scanBusy = false;
               }, 2500);
             }
           }
+        );
+
+        status.textContent =
+          'Camera is on. Scan a member QR code.';
+      } catch (err) {
+        if (scanner) {
+          try {
+            await scanner.stop();
+            await scanner.clear();
+          } catch (_) {}
+        }
+        scanner = null;
+        status.textContent = 'Camera error: ' + err.message;
+      }
     };
 
     document.getElementById('stop').onclick = async () => {
       if (!scanner) return;
-      try { await scanner.stop(); await scanner.clear(); }
-      catch (err) { console.error(err); }
+
+      try {
+        await scanner.stop();
+        await scanner.clear();
+      } catch (err) {
+        console.error(err);
+      }
+
       scanner = null;
       status.textContent = 'Camera stopped.';
     };
